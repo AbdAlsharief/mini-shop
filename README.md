@@ -56,9 +56,3 @@ The application is organized into clear routing segments:
 * **Admin Panel**: Merchant management under the `/admin/merchants` prefix.
 * **Master Admin**: System oversight under the `/master/admins` prefix.
 
-## 🧪 Testing
-
-To run the full test suite using Pest:
-
-```bash
-composer run test
