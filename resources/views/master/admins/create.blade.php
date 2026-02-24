@@ -24,8 +24,8 @@
                         <label class="block text-sm font-semibold text-gray-300 mb-3">Role <span class="text-red-400">*</span></label>
                         <div class="grid grid-cols-2 gap-3">
                             @foreach([
-                                ['value' => 'admin',        'label' => 'Admin',        'icon' => '🛡️', 'desc' => 'Can register and manage merchants'],
-                                ['value' => 'master_admin', 'label' => 'Master Admin', 'icon' => '👑', 'desc' => 'Full control — can create admins & masters'],
+                                ['value' => 'admin',  'label' => 'Admin',        'icon' => '🛡️', 'desc' => 'Can register and manage merchants'],
+                                ['value' => 'master', 'label' => 'Master Admin', 'icon' => '👑', 'desc' => 'Full control — can create admins & masters'],
                             ] as $opt)
                                 <label class="cursor-pointer">
                                     <input type="radio" name="role" value="{{ $opt['value'] }}"

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -12,7 +13,11 @@ class MerchantController extends Controller
 {
     public function index()
     {
-        $merchants = User::where('role', 'merchant')->latest()->get();
+        $merchants = User::whereHas('roles', fn($q) => $q->where('name', 'merchant'))
+                         ->with('roles', 'products')
+                         ->latest()
+                         ->get();
+
         return view('admin.merchants.index', compact('merchants'));
     }
 
@@ -29,12 +34,14 @@ class MerchantController extends Controller
             'password' => ['required', 'confirmed', Password::min(8)],
         ]);
 
-        User::create([
+        $user = User::create([
             'name'     => $request->name,
             'email'    => $request->email,
             'password' => Hash::make($request->password),
-            'role'     => 'merchant',
         ]);
+
+        $role = Role::where('name', 'merchant')->firstOrFail();
+        $user->roles()->attach($role->id);
 
         return redirect()->route('admin.merchants.index')
                          ->with('success', "Merchant '{$request->name}' created successfully.");
@@ -42,13 +49,14 @@ class MerchantController extends Controller
 
     public function destroy(User $user)
     {
-        if ($user->role !== 'merchant') {
+        if (!$user->roles->contains('name', 'merchant')) {
             return redirect()->back()->with('error', 'Only merchants can be removed here.');
         }
 
-        $user->update(['role' => 'client']);
+        $merchantRole = Role::where('name', 'merchant')->first();
+        $user->roles()->detach($merchantRole->id);
 
         return redirect()->route('admin.merchants.index')
-                         ->with('success', "'{$user->name}' has been demoted to client.");
+                         ->with('success', "'{$user->name}' has been demoted to customer.");
     }
 }

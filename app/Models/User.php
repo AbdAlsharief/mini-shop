@@ -14,7 +14,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',
     ];
 
     protected $hidden = [
@@ -30,32 +29,12 @@ class User extends Authenticatable
         ];
     }
 
-    // ── Role helpers ─────────────────────────────────────────
-
-    /** Merchant AND master_admin can manage products */
-    public function isMerchant(): bool
-    {
-        return in_array($this->role, ['merchant', 'master_admin']);
-    }
-
-    /** Admin AND master_admin can manage merchants */
-    public function isAdminRole(): bool
-    {
-        return in_array($this->role, ['admin', 'master_admin']);
-    }
-
-    /** Only master_admin can manage admins and other masters */
-    public function isMasterAdmin(): bool
-    {
-        return $this->role === 'master_admin';
-    }
-
-    public function isClient(): bool
-    {
-        return $this->role === 'client';
-    }
-
     // ── Relationships ─────────────────────────────────────────
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class);
+    }
 
     public function orders()
     {
@@ -65,5 +44,51 @@ class User extends Authenticatable
     public function products()
     {
         return $this->hasMany(Product::class, 'user_id');
+    }
+
+    // ── Role helpers ─────────────────────────────────────────
+
+    /**
+     * Check if user has any of the given role names (OR logic).
+     * master satisfies ALL role checks (hierarchy).
+     *
+     * Role names: master, admin, merchant, customer
+     * Used by CheckRole middleware: ->middleware('role:merchant')
+     */
+    public function hasRole(array|string $roles): bool
+    {
+        $roles = (array) $roles;
+
+        $userRoles = $this->roles->pluck('name')->toArray();
+
+        // master passes everything
+        if (in_array('master', $userRoles)) {
+            return true;
+        }
+
+        return (bool) array_intersect($userRoles, $roles);
+    }
+
+    /** True for merchant + master (can manage products) */
+    public function isMerchant(): bool
+    {
+        return $this->hasRole(['merchant', 'master']);
+    }
+
+    /** True for admin + master (can manage merchants) */
+    public function isAdminRole(): bool
+    {
+        return $this->hasRole(['admin', 'master']);
+    }
+
+    /** Only master */
+    public function isMasterAdmin(): bool
+    {
+        return $this->roles->contains('name', 'master');
+    }
+
+    public function isClient(): bool
+    {
+        return !$this->isMerchant() && !$this->isAdminRole();
     }
 }
