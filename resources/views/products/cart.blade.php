@@ -13,6 +13,22 @@
                 <h1 class="text-4xl font-extrabold gradient-text">Your Cart</h1>
             </div>
 
+            <!-- Flash Messages -->
+            @if(session('error'))
+                <div class="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium animate-fade-in"
+                     style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); color:#f87171;">
+                    <span>⚠️</span>
+                    <span>{{ session('error') }}</span>
+                </div>
+            @endif
+            @if(session('success'))
+                <div class="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium animate-fade-in"
+                     style="background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.3); color:#4ade80;">
+                    <span>✓</span>
+                    <span>{{ session('success') }}</span>
+                </div>
+            @endif
+
             @if(count($cart) > 0)
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
@@ -37,6 +53,8 @@
 
                                 <!-- Quantity Controls -->
                                 <div class="flex items-center gap-2 flex-shrink-0">
+                                    @php $stock = $details['stock'] ?? PHP_INT_MAX; @endphp
+
                                     <form action="{{ route('cart.update', $id) }}" method="POST">
                                         @csrf
                                         @method('PATCH')
@@ -57,8 +75,11 @@
                                         <button type="submit"
                                                 class="w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-all duration-150"
                                                 style="background:rgba(139,92,246,0.15); color:#a78bfa;"
+                                                {{ $details['quantity'] >= $stock ? 'disabled' : '' }}
                                                 onmouseenter="this.style.background='rgba(139,92,246,0.3)'"
-                                                onmouseleave="this.style.background='rgba(139,92,246,0.15)'">+</button>
+                                                onmouseleave="this.style.background='rgba(139,92,246,0.15)'"
+                                                @if($details['quantity'] >= $stock) title="Max stock reached" style="opacity:0.4; cursor:not-allowed;" @endif
+                                        >+</button>
                                     </form>
                                 </div>
 

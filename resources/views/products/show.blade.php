@@ -28,7 +28,12 @@
                 <div class="flex flex-col justify-between">
                     <div>
                         <!-- Badge -->
-                        <span class="badge badge-success mb-4">✓ In Stock</span>
+                        @if($product->stock > 0)
+                            <span class="badge badge-success mb-4">✓ In Stock &mdash; {{ $product->stock }} left</span>
+                        @else
+                            <span class="mb-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                                  style="background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3);">✗ Out of Stock</span>
+                        @endif
 
                         <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-100 mb-4">
                             {{ $product->name }}
@@ -67,12 +72,15 @@
                     <div class="flex flex-col sm:flex-row gap-3">
                         <form action="{{ route('cart.add', $product->id) }}" method="POST" class="flex-1">
                             @csrf
-                            <button type="submit" class="btn-primary w-full justify-center py-3 text-base">
+                            <button type="submit"
+                                    class="btn-primary w-full justify-center py-3 text-base"
+                                    {{ $product->stock <= 0 ? 'disabled' : '' }}
+                                    style="{{ $product->stock <= 0 ? 'opacity:0.5; cursor:not-allowed;' : '' }}">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                           d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                                 </svg>
-                                Add to Cart
+                                {{ $product->stock > 0 ? 'Add to Cart' : 'Out of Stock' }}
                             </button>
                         </form>
 

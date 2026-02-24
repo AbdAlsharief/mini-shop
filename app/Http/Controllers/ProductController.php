@@ -7,6 +7,9 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 class ProductController extends Controller
 {
@@ -69,17 +72,31 @@ class ProductController extends Controller
 
     public function addToCart(Product $product)
     {
+        if ($product->stock <= 0) {
+            return redirect()->back()->with('error', 'Sorry, this product is out of stock.');
+        }
+
         $cart = session()->get('cart', []);
+        $currentQty = isset($cart[$product->id]) ? $cart[$product->id]['quantity'] : 0;
+
+        if ($currentQty >= $product->stock) {
+            return redirect()->back()->with('error', "Sorry, only {$product->stock} unit(s) available.");
+        }
+
         if (isset($cart[$product->id])) {
             $cart[$product->id]['quantity']++;
         } else {
             $cart[$product->id] = [
-                'name' => $product->name,
-                'price' => $product->price,
-                'quantity' => 1
+                'name'     => $product->name,
+                'price'    => $product->price,
+                'quantity' => 1,
+                'stock'    => $product->stock,
             ];
-
         }
+
+        // Always keep stock in sync in case it changed
+        $cart[$product->id]['stock'] = $product->stock;
+
         session()->put('cart', $cart);
 
         return redirect()->back()->with('success', 'Product added to cart successfully!');
@@ -104,44 +121,77 @@ class ProductController extends Controller
     {
         $cart = session()->get('cart');
 
-        if(isset($cart[$id])) {
-            $cart[$id]['quantity'] = $request->quantity;
+        if (isset($cart[$id])) {
+            $product = Product::find($id);
+            $stock = $product ? $product->stock : ($cart[$id]['stock'] ?? PHP_INT_MAX);
+
+            // Clamp quantity between 1 and available stock
+            $quantity = max(1, min((int) $request->quantity, $stock));
+            $cart[$id]['quantity'] = $quantity;
+
+            // Keep stock fresh
+            if ($product) {
+                $cart[$id]['stock'] = $product->stock;
+            }
+
             session()->put('cart', $cart);
         }
 
         return redirect()->back();
-
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \Throwable
+     */
     public function checkout()
     {
         $cart = session()->get('cart', []);
 
-        if(count($cart) == 0) {
+        if (count($cart) == 0) {
             return redirect()->back();
         }
 
-        $total = collect($cart)->sum(function($item){
-            return $item['price'] * $item['quantity'];
-        });
+        return DB::transaction(function () use ($cart) {
 
-        $order = Order::create([
-            'user_id' => Auth::id(),
-            'total' => $total,
-            'status' => 'pending'
-        ]);
+            $total = collect($cart)->sum(function ($item) {
+                return $item['price'] * $item['quantity'];
+            });
 
-        foreach($cart as $id => $details){
-            OrderItem::create([
-                'order_id' => $order->id,
-                'product_id' => $id,
-                'quantity' => $details['quantity'],
-                'price' => $details['price']
+            $order = Order::create([
+                'user_id' => Auth::id(),
+                'total' => $total,
+                'status' => 'pending'
             ]);
-        }
 
-        session()->forget('cart');
+            foreach ($cart as $id => $details) {
 
-        return redirect('/')->with('success', 'Order placed successfully!');
+                $product = Product::find($id);
+
+
+                if (!$product) {
+                    throw new \Exception("Product not found");
+                }
+
+                if ($product->stock < $details['quantity']) {
+                    throw new \Exception("Not enough stock for {$product->name}");
+                }
+
+
+                $product->decrement('stock', $details['quantity']);
+
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $id,
+                    'quantity' => $details['quantity'],
+                    'price' => $details['price']
+                ]);
+            }
+
+            session()->forget('cart');
+
+            return redirect('/')->with('success', 'Order placed successfully!');
+        });
     }
 }

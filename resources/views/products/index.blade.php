@@ -54,7 +54,21 @@
                                         <div>
                                             <span class="text-2xl font-extrabold text-white">${{ number_format($product->price, 2) }}</span>
                                         </div>
-                                        <!-- CTA -->
+                                        <!-- Stock Badge -->
+                                        @if($product->stock > 0)
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+                                                  style="background:rgba(34,197,94,0.15); color:#4ade80; border:1px solid rgba(34,197,94,0.3);">
+                                                ✓ {{ $product->stock }} left
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+                                                  style="background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3);">
+                                                ✗ Sold out
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <!-- View CTA -->
+                                    <div class="flex justify-end mt-3">
                                         <span class="flex items-center gap-1.5 text-sm font-semibold text-violet-400
                                                      group-hover:text-violet-300 transition-colors">
                                             View
