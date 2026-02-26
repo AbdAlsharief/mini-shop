@@ -5,6 +5,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AiRecommendationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/',                  [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/search',   [ProductController::class, 'liveSearch'])->name('products.live-search');
 Route::get('/products/{product}',[ProductController::class, 'show'])->name('products.show');
+Route::post('/ai/recommend', [AiRecommendationController::class, 'recommend'])->name('ai.recommend');
 
 /*
 |--------------------------------------------------------------------------
