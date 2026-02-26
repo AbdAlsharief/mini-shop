@@ -1,23 +1,34 @@
 <?php
-use App\Http\Controllers\ProductController;
+
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Shop Routes
+| Shop — Product Routes
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', [ProductController::class, 'index'])->name('products.index');
-Route::get('/cart', [ProductController::class, 'cart'])->name('cart');
-Route::post('/checkout', [ProductController::class, 'checkout'])->middleware('auth')->name('checkout');
-Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
-Route::post('/cart/add/{product}', [ProductController::class, 'addToCart'])->name('cart.add');
-Route::post('/cart/remove/{product}', [ProductController::class, 'removeFromCart'])->name('cart.remove');
-Route::patch('/cart/update/{id}', [ProductController::class, 'updateCart'])->name('cart.update');
-Route::get('/orders/{order}',[OrderController::class, 'show'])->middleware('auth')->name('orders.show');
+Route::get('/',                  [ProductController::class, 'index'])->name('products.index');
+Route::get('/products/search',   [ProductController::class, 'liveSearch'])->name('products.live-search');
+Route::get('/products/{product}',[ProductController::class, 'show'])->name('products.show');
+
+/*
+|--------------------------------------------------------------------------
+| Shop — Cart & Checkout Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/cart',                        [CartController::class, 'index'])->name('cart');
+Route::post('/cart/add/{product}',         [CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/remove/{product}',      [CartController::class, 'remove'])->name('cart.remove');
+Route::patch('/cart/update/{id}',          [CartController::class, 'update'])->name('cart.update');
+Route::post('/checkout',                   [CartController::class, 'checkout'])->middleware('auth')->name('checkout');
+
+Route::get('/orders/{order}', [OrderController::class, 'show'])->middleware('auth')->name('orders.show');
 
 /*
 |--------------------------------------------------------------------------
